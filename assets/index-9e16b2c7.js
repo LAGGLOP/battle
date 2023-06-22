@@ -31,7 +31,7 @@ document.getElementByTagName("canvas").style.zIndex = "0";
 document.getElementByTagName("canvas").style.width = appSize[0]
 document.getElementByTagName("canvas").style.height = appSize[1]  */
 //app.loader.baseUrl = "src/img";
-app.loader.baseUrl = "assets/img";
+app.loader.baseUrl = "src/img";
 app.loader.add("player_1","player_1.png")
 .add("player_2","player_2.png")
 .add("player_3","player_3.png")

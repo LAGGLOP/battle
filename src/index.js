@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 
 //const HOST = "http://localhost:5000"
 
-const HOST = "ws://ovz1.romatsvirco.pl4wm.vps.myjino.ru"
+const HOST = "ws://minerwars.ru"
 
 const socket = io.connect(HOST);
 

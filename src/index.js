@@ -1,3 +1,5 @@
+import io from 'socket.io-client';
+
 const HOST = "ws://minerwars.ru"
 
 const socket = io.connect(HOST);

@@ -1,4 +1,4 @@
-import io from 'socket.io-client';
+import { io } from "./lib/socket.io.esm.min.js";
 //import * as PIXI from 'pixi.js'
 
 //const HOST = "http://localhost:5000"

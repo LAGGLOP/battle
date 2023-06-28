@@ -1,5 +1,10 @@
 import io from 'socket.io-client';
 
+import connect from 'https://dev.jspm.io/@vkontakte/vk-connect';
+connect.default.send("VKWebAppInit");
+
+//const HOST = "http://localhost:5000"
+
 const HOST = "ws://minerwars.ru"
 
 const socket = io.connect(HOST);
@@ -35,6 +40,7 @@ app.loader.add("player_1","player_1.png")
 .add("player_4","player_4.png")
          .add("block","block.jpg")
          .add("floor","floor.png")
+         .add("sendButton","sendButton.png")
          .add("iron_ore","iron_ore.png")
          .add("joy","joy.png")
          .add("touch","touch.png")
@@ -51,6 +57,7 @@ app.loader.add("player_1","player_1.png")
          .add("userRam","userRam.png")
          .add("slot","slot.png")
          .add("pause","pause.png")
+         .add("slotChat","slotChat.png")
          .add("infoRam","infoRam.png")
          .add("atkeffect","atkeffect.png")
          .add("straiteffect","straiteffect.png")
@@ -138,7 +145,13 @@ function start() {
                darkIn.drawRect(0, 0, appSize[0], appSize[1]);
                darkIn.alpha = 0;
 
-               control.addChild(dark,darkIn);
+                var darkRedIn = new PIXI.Graphics();
+               darkRedIn.beginFill(0xff0000);
+               darkRedIn.drawRect(0, 0, appSize[0], appSize[1]);
+               darkRedIn.alpha = 0;
+               
+
+               control.addChild(dark,darkIn,darkRedIn);
 
                var moveControl = new PIXI.Container();
                control.addChild(moveControl);
@@ -272,11 +285,11 @@ touchPos.y = (touch_rad < joy.width/3) ? touch_rad * -dir[1] + app.screen.height
 function getKeyDir() {
     var newDir = {x:0,y:0};
     keysPressed.forEach(key => {
-    if(key == '40' || key == '83' ) { newDir.y += joy.width/3; }
-    if(key == '38' ||key == '87') { newDir.y -= joy.width/3; }
-    if(key == '37' || key == '65') { newDir.x -= joy.width/3; }
-    if(key == '39' || key == '68') { newDir.x += joy.width/3; }
-    if(key == '69') { takeArm() }
+    if((key == '40' || key == '83')&&!isChat) { newDir.y += joy.width/3; }
+    if((key == '38' ||key == '87')&&!isChat) { newDir.y -= joy.width/3; }
+    if((key == '37' || key == '65')&&!isChat) { newDir.x -= joy.width/3; }
+    if((key == '39' || key == '68')&&!isChat) { newDir.x += joy.width/3; }
+    if((key == '69')&&!isChat) { takeArm() }
 })
 getDir(newDir);
 }
@@ -287,6 +300,27 @@ getDir(newDir);
                slotPause.x = -pixelW* 0.2
                slotPause.y = slotPause.height * 0.2;
                slotPause.alpha = 1;
+
+               var slotChat = PIXI.Sprite.from(app.loader.resources.slotChat.texture);
+               slotChat.width = -pixelW / slotChat.height * slotChat.width;
+               slotChat.height = pixelW;
+               slotChat.x = appSize[0]+pixelW* 0.2
+               slotChat.y = slotChat.height * 1.4;
+               slotChat.alpha = 1;
+               slotChat.interactive = true;
+               slotChat.on("pointerdown",()=>{
+               if(isChat){
+                chatPlace.removeChild(slotChat)
+                control.addChild(slotChat)
+                      control.removeChild(chatPlace);
+                      isChat = false;
+                    } else {
+                      control.removeChild(slotChat)
+                      chatPlace.addChild(slotChat)
+                      control.addChild(chatPlace);
+                      isChat = true;
+                    }
+                    })
 
                var slotArm = PIXI.Sprite.from(app.loader.resources.slot.texture);
                slotArm.width = pixelW / slotArm.height * slotArm.width;
@@ -386,7 +420,7 @@ getDir(newDir);
                userRam.width = (pixelW / userRam.height) * userRam.width;
                userRam.height = pixelW;
                userRam.y =  userRam.height * 0.2
-               userRam.x = app.screen.width / 2 - userRam.width / 2
+               userRam.x = app.screen.width / 2.3 - userRam.width / 2
                userRam.alpha = 1;
                
                var userHp = new PIXI.Container()
@@ -396,7 +430,7 @@ getDir(newDir);
                 var heart = PIXI.Sprite.from(app.loader.resources.heart.texture);
                 heart.width = (pixelW / 3.2 / heart.height) * heart.width;
                 heart.height = pixelW / 3.2
-                heart.x =  slotPause.width * 1.58 + i * heart.width;
+                heart.x =  slotPause.width * 1.2 + i * heart.width;
                 heart.y = userRam.y + userRam.height * 0.4
                 userHp.addChild(heart)
                 userHpHearts.push(heart)
@@ -404,30 +438,93 @@ getDir(newDir);
 
                var userName = new PIXI.Text('',{fontFamily:'Helvetica',fill:'white',textAlign:"center",fontSize:userRam.height/4.5,fontWeight:'bold',padding:userRam.height });
                userName.y = userRam.height * 0.47
-               userName.x = app.screen.width / 2
+               userName.x = app.screen.width / 2.3
                userName.anchor.set(0.5);
 
                var frontExp = new PIXI.Graphics();
                frontExp.lineStyle(pixelW / 18, 0x4181da);
-               frontExp.moveTo(slotPause.width * 2.1,userRam.y + userRam.height * 0.79);
+               frontExp.moveTo(slotPause.width * 1.95,userRam.y + userRam.height * 0.79);
 
                var backExp = new PIXI.Graphics();
                backExp.beginFill(0xabc7ef);
-               backExp.drawRect(slotPause.width * 2.1, userRam.y + userRam.height * 0.77, userRam.x * 1.3, pixelW / 18);
+               backExp.drawRect(slotPause.width * 1.95, userRam.y + userRam.height * 0.77, userRam.x * 1.3, pixelW / 18);
 
                var expLvl = new PIXI.Text('Lv. 1',{fontFamily:'Helvetica',fill:0xabc7ef,textAlign:"center",fontSize:userRam.height/8,fontWeight:1000,padding:userRam.height });
                expLvl.y = userRam.y + userRam.height * 0.73
-               expLvl.x = slotPause.width * 1.8
+               expLvl.x = slotPause.width * 1.65
 
                var fpsText = new PIXI.Text("",{fontFamily:'Helvetica',fill:'white',textAlign:"center",fontSize:16,fontWeight:'bold',padding:10});
                fpsText.x = 10;
                fpsText.y = appSize[1] - 30;
 
                var floorText = new PIXI.Text("Этаж 1",{fontFamily:'Helvetica',fill:'white',textAlign:"right",fontSize:10,fontWeight:'bold',padding:10});
-               floorText.x = appSize[0] - 50;
-               floorText.y = 15;
+               floorText.x = appSize[0] - 40;
+               floorText.y = slotChat.height * 1.4 - 15;
 
-               control.addChild(slotPause,slotArm,slotArt,armInfoCont,artInfoCont,userRam,userHp,userName,backExp,frontExp,expLvl,fpsText,floorText);
+               var chat = new PIXI.Text('',{fontFamily:'Helvetica',fill:'white',textAlign:"center",fontSize:userRam.height/6.5,fontWeight:'bold',padding:10,lineHeight:userRam.height/4 });
+               chat.y = userRam.height * 1.3
+               chat.x = app.screen.width / 5;
+
+               var chatText = new PIXI.Text('',{fontFamily:'Helvetica',display:"table-cell", verticalAlign:"bottom",fill:'white',fontSize:userRam.height/5,fontWeight:'bold',padding:10,lineHeight:userRam.height/3 });
+               chatText.y = appSize[1] * 0.93
+               chatText.x = 10;
+               chatText.anchor.set(0,1)
+
+               var chatPlace = new PIXI.Container();
+               chatPlace.interactive = true
+
+               var input = new PIXI.TextInput({
+    input: { fontSize: 30+"px",
+    padding:"10px",
+    textAlign:"left",
+        width: appSize[0]*0.02,
+        height: appSize[1] * 0.05,
+        color: '#26272E'
+    }, box: {fill: 0xE8E9F3, rounded: 2}})
+input.y = appSize[1] - appSize[1]*0.06;
+input.x = 10;
+input.width = appSize[0] * 0.8;
+input.height = appSize[1] * 0.05;
+input.maxLength = 120;
+input.on('keydown', keycode => {
+   if(keycode == 13) {
+    socket.emit("chatSend",input.text);
+    input.text = ""}});
+
+var darkChat = new PIXI.Graphics();
+               darkChat.beginFill(0x000000);
+               darkChat.drawRect(0, 0, appSize[0], appSize[1]);
+               darkChat.alpha = 0.7;
+
+var isChat = false;
+
+var sendButton = PIXI.Sprite.from(app.loader.resources.sendButton.texture);
+               sendButton.width = (appSize[1] * 0.05 / sendButton.height) * sendButton.width;
+               sendButton.height = appSize[1] * 0.05;
+               sendButton.anchor.set(0.5);
+               sendButton.x = appSize[0] * 0.92
+               sendButton.y = appSize[1] - appSize[1]*0.035;
+               sendButton.interactive = true;
+               var can_sendMsg = true;
+               sendButton.on("pointerdown",()=>{
+                if(can_sendMsg == true) {
+                can_sendMsg = false;
+                      sendButton.alpha = 0.75;
+                      sendButton.width *= 0.95;
+                      sendButton.height *= 0.95;
+                      socket.emit("chatSend",input.text);
+                      input.text = ""
+                       setTimeout(()=>{
+                        can_sendMsg = true;
+                         sendButton.alpha = 1;
+                         sendButton.width *= (1/0.95);
+                         sendButton.height *= (1/0.95);
+                      },500)
+                    }})
+
+               chatPlace.addChild(darkChat,input,sendButton,chatText);
+
+               control.addChild(slotPause,slotArm,slotArt,slotChat,chat,armInfoCont,artInfoCont,userRam,userHp,userName,backExp,frontExp,expLvl,fpsText,floorText,slotChat);
 
                var animExp = [0,0];
                var animLvl = [1,1];
@@ -455,10 +552,10 @@ getDir(newDir);
                  expLvl.text = "Lv. "+animLvl[0];
                 }
                 if(expNeed[animLvl[0]-1] * 0.01 > 0) {
-               frontExp.moveTo(slotPause.width * 2.1 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]),userRam.y + userRam.height * 0.8);
+               frontExp.moveTo(slotPause.width * 1.95 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]),userRam.y + userRam.height * 0.8);
                animExp[0] += expNeed[animLvl[0]-1] * 0.01;
                frontExp.lineStyle(pixelW / 18, 0x4181da);
-               frontExp.lineTo(slotPause.width * 2.1 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]), userRam.y + userRam.height * 0.8);
+               frontExp.lineTo(slotPause.width * 1.95 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]), userRam.y + userRam.height * 0.8);
                      }
                if(animLvl[0] < animLvl[1] || animExp[0] < animExp[1]) {
                 requestAnimationFrame( animateExp );
@@ -477,9 +574,9 @@ getDir(newDir);
                   animLvl[0] = lvl;
                   expLvl.text = "Lv. "+lvl;
                   frontExp.clear();
-                  frontExp.moveTo(slotPause.width * 2.1,userRam.y + userRam.height * 0.8);
+                  frontExp.moveTo(slotPause.width * 1.95,userRam.y + userRam.height * 0.8);
                   frontExp.lineStyle(pixelW / 18, 0x4181da);
-                  frontExp.lineTo(slotPause.width * 2.1 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]), userRam.y + userRam.height * 0.8);
+                  frontExp.lineTo(slotPause.width * 1.95 + userRam.x * (1.3 * animExp[0]/expNeed[animLvl[0]-1]), userRam.y + userRam.height * 0.8);
                 } else if(lvl>animLvl || (lvl == animLvl[1] && exp > animExp[1])) {
                       setExp(lvl,exp);
                 }
@@ -489,7 +586,7 @@ getDir(newDir);
                let id;
                let size;
                var hasPlayer = false;
-              setTimeout(()=>socket.emit("auth"),2000);;
+              socket.emit("auth");
                socket.on("log",(data) => generate(data));
 
               async function generate(data) {
@@ -501,7 +598,7 @@ getDir(newDir);
                     floorText.text = "Этаж "+playerSU.floor;
                 if(hasPlayer == true) {
                     var playerS = players.find(x=>x.user.id == id);
-                 if(playerS.user.floor == playerSU.floor) { darkInScreen(0.15,0.2) } else { darkInScreen(0.8,1) };
+                // if(playerS.user.floor == playerSU.floor) { darkInScreen(0.15,0.2) } 
                     playerS.user = playerSU;
                 var pcl = playersCont.children.length
                 for(var i = 0; i < pcl;i++) {playersCont.removeChild(playersCont.children[0])}
@@ -1143,6 +1240,7 @@ if(collisions.find(x=>x[0] == nearMap[i].x && x[1] == nearMap[i].y)) {
 */
 if(Math.abs(playerCont.x) >= size * pixelW || Math.abs(playerCont.y) >= size * pixelW) {
     socket.emit('newRoom');
+    darkInScreen(0.2,0.2)
 }
 if(last.dir[0] != lastDir.dir[0] || last.dir[1] != lastDir.dir[1] || last.angle != lastDir.angle || last.boost != lastDir.boost) {
 socket.emit("newDir",{dir:[last.dir[0] * last.boost, last.dir[1] * last.boost],angle:last.angle});
@@ -1170,6 +1268,29 @@ var darkInInt = setInterval(() => {
 }
 time += 50;
 },50);
+}
+
+function darkRedInScreen(alphaMust,delay) {
+  var darkInAnimate = true;
+  var alpha = 0;
+  var time = 0;
+var darkInInt = setInterval(() => {
+  if(darkInAnimate) {
+    alpha += alphaMust * (20 / delay / 1000);
+    darkRedIn.alpha = alpha;
+  if(alpha >= alphaMust) {
+    darkInAnimate = false;
+}
+} else {
+    alpha -= alphaMust * (20 / delay / 1000);
+    darkRedIn.alpha = alpha;
+        if(alpha <= 0) {
+    darkRedIn.alpha = 0;
+  clearInterval(darkInInt);
+}
+}
+time += 20;
+},20);
 }
 
 let delta = 0;
@@ -1485,7 +1606,8 @@ setTimeout(()=>{if(players.find(x=>x.user.id == data.id)) {playerAttacked[1].tex
                   }
               }
                             playerDmged.player.alpha = 0.8
-                            alphaPlayer(obj.id,1,200)
+                            alphaPlayer(obj.id,1,200);
+
                             } else {
                     var heartsLife = Math.ceil(obj.hp / 10);
                     if(heartsLife > 0) {
@@ -1501,6 +1623,7 @@ setTimeout(()=>{if(players.find(x=>x.user.id == data.id)) {playerAttacked[1].tex
                           }
                     }
                   }
+                   darkRedInScreen(.075,.25);
                             playerCont.alpha = 0.8
                             setTimeout(() => {
                               playerCont.alpha = 1
@@ -1571,6 +1694,49 @@ setTimeout(()=>{if(players.find(x=>x.user.id == data.id)) {playerAttacked[1].tex
                                  }
                                },40)
                               }
+var lastMsg = 0;
+var lastMsgText = "";
+var lastMsgChat = "";
+socket.on("chat",(data)=>{
+  var msg = (lastMsgText.length==0)?"":"↨"
+  var msgChat = (lastMsgText.length==0)?"":"↨"
+for(var i = 0;i<data.length;i++) {
+   if(i % 40 == 0 && i > 0) { msg+="↨";}
+    msg+=data[i];
+}
+for(var g = 0;g<data.length;g++) {
+   if(g % 45 == 0 && g > 0) { msgChat+="↨";}
+    msgChat+=data[g];
+}
+lastMsg = Date.now();
+chat.alpha = 1;
+msg=lastMsgText+msg;
+msgChat=lastMsgChat+msgChat
+var newText = msg.split("↨");
+var newChat = msgChat.split("↨");
+while(newText.length > 8) {newText.splice(0,1);}
+while(newChat.length > 46) {newChat.splice(0,1);}
+var newTextMsg = "";
+var newTextChat = "";
+lastMsgText = "";
+lastMsgChat = "";
+for(var i = 0;i<newText.length;i++) {lastMsgText+=newText[i]; if(i - newText.length != -1) {lastMsgText+="↨"}};
+for(var i = 0;i<newText.length;i++) {newTextMsg+=newText[i]; if(i - newText.length != -1) {newTextMsg+="\n"}};
+for(var i = 0;i<newChat.length;i++) {lastMsgChat+=newChat[i]; if(i - newChat.length != -1) {lastMsgChat+="↨"}};
+for(var i = 0;i<newChat.length;i++) {newTextChat+=newChat[i]; if(i - newChat.length != -1) {newTextChat+="\n"}};
+  chat.text = newTextMsg;
+  chatText.text = newTextChat;
+});
+
+setInterval(()=>{
+  if(Date.now()-lastMsg>4000) {
+    if(chat.alpha > 0){
+   chat.alpha -= 0.02
+ }
+  } 
+},50)
+
+
 
                let boost = 1;
 
@@ -1675,6 +1841,7 @@ setTimeout(()=>{if(players.find(x=>x.user.id == data.id)) {playerAttacked[1].tex
 
                if(buildRange00 <= pixelW || buildRange01 <= pixelW || buildRange02 <= pixelW || buildRange10 <= pixelW || buildRange11 <= build.size/2*pixelW || buildRange12 <= pixelW || buildRange20 <= pixelW || buildRange21 <= pixelW || buildRange22 <= pixelW) {
                 socket.emit("GoHole",build.id);
+                darkInScreen(0.8,1)
                    }
                }
                }
